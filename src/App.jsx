@@ -45,7 +45,7 @@ function App() {
     axios
       .post(`${BASE_URL}/v2/api/user/check`)
       .then((res) => {
-        alert('使用者已登入');
+        alert(res+'使用者已登入');
       })
       .catch((error) => {
         console.error(error);
