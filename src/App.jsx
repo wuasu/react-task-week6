@@ -176,61 +176,45 @@ function App() {
     });
   };
 
-  //新增產品
+  // 新增產品(不在這裡catch error)
   const createProduct = async () => {
-    try {
-      await axios.post(`${BASE_URL}/v2/api/${API_PATH}/admin/product`, {
+    await axios.post(`${BASE_URL}/v2/api/${API_PATH}/admin/product`, {
+      data: {
+        ...rowProduct,
+        origin_price: Number(rowProduct.origin_price),
+        price: Number(rowProduct.price),
+        is_enabled: rowProduct.is_enabled ? 1 : 0,
+      },
+    });
+  };
+
+  // 編輯產品(不在這裡catch error)
+  const editProduct = async () => {
+    await axios.put(
+      `${BASE_URL}/v2/api/${API_PATH}/admin/product/${rowProduct.id}`,
+      {
         data: {
           ...rowProduct,
           origin_price: Number(rowProduct.origin_price),
           price: Number(rowProduct.price),
           is_enabled: rowProduct.is_enabled ? 1 : 0,
         },
-      });
-    } catch (error) {
-      alert("新增產品失敗");
-    }
-  };
-
-  //編輯產品
-  const editProduct = async () => {
-    try {
-      await axios.put(
-        `${BASE_URL}/v2/api/${API_PATH}/admin/product/${rowProduct.id}`,
-        {
-          data: {
-            ...rowProduct,
-            origin_price: Number(rowProduct.origin_price),
-            price: Number(rowProduct.price),
-            is_enabled: rowProduct.is_enabled ? 1 : 0,
-          },
-        }
-      );
-    } catch (error) {
-      alert("編輯產品失敗");
-    }
+      }
+    );
   };
 
   //刪除產品
   const delProduct = async () => {
     try {
       await axios.delete(
-        `${BASE_URL}/v2/api/${API_PATH}/admin/product/${rowProduct.id}`,
-        {
-          data: {
-            ...rowProduct,
-            origin_price: Number(rowProduct.origin_price),
-            price: Number(rowProduct.price),
-            is_enabled: rowProduct.is_enabled ? 1 : 0,
-          },
-        }
+        `${BASE_URL}/v2/api/${API_PATH}/admin/product/${rowProduct.id}`
       );
     } catch (error) {
       alert("刪除產品失敗");
     }
   };
 
-  //確定btn
+  // 確定btn
   const updateProduct = async () => {
     const apiCall = modalStatus === "add" ? createProduct : editProduct;
     try {
@@ -238,10 +222,14 @@ function App() {
       getProducts();
       handleCloseProductModal();
     } catch (error) {
-      alert("更新產品失敗");
+      //失敗的話不關掉modal
+      if (modalStatus === "add") {
+        alert("新增產品失敗");
+      } else if (modalStatus === "edit") {
+        alert("編輯產品失敗");
+      }
     }
   };
-
 
   const handleDeleteProduct = async () => {
     try {
@@ -251,8 +239,7 @@ function App() {
     } catch (error) {
       alert("刪除產品失敗");
     }
-    
-  }
+  };
 
   return (
     <>
@@ -288,7 +275,13 @@ function App() {
                       <th scope="row">{row.title}</th>
                       <td>{row.origin_price}</td>
                       <td>{row.price}</td>
-                      <td>{row.is_enabled ? "啟用" : "未啟用"}</td>
+                      <td>
+                        {row.is_enabled ? (
+                          <span className="text-success">啟用</span>
+                        ) : (
+                          <span>未啟用</span>
+                        )}
+                      </td>
                       <td>
                         <div className="btn-group">
                           <button
