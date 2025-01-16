@@ -16,7 +16,6 @@ function App() {
   const BASE_URL = import.meta.env.VITE_BASE_URL;
   const API_PATH = import.meta.env.VITE_API_PATH;
 
-  const productModalRef = useRef(null);
   const [modalStatus, setModalStatus] = useState(null);
 
   //欄位預設值
@@ -34,6 +33,8 @@ function App() {
   };
 
   const [rowProduct, setRowProduct] = useState(defaultModalState);
+  const productModalRef = useRef(null);
+  const delProductModalRef = useRef(null);
 
   const handleChange = (e) => {
     const name = e.target.name;
@@ -58,27 +59,6 @@ function App() {
         alert(error + "登入失敗");
       });
   };
-
-  // const getProducts = async () => {
-  //   try {
-  //     const res = await axios.get(
-  //       `${BASE_URL}/v2/api/${API_PATH}/admin/products`
-  //     );
-  //     setProducts(res.data.products);
-  //   } catch (error) {
-  //     alert("取得產品失敗");
-  //   }
-  // };
-
-  // const checkUserLogin = async () => {
-  //   try {
-  //     await axios.post(`${BASE_URL}/v2/api/user/check`);
-  //     getProducts();
-  //     setIsAuth(true);
-  //   } catch (error) {
-  //     console.error(error);
-  //   }
-  // };
 
   const getProducts = useCallback(async () => {
     try {
@@ -114,7 +94,11 @@ function App() {
   useEffect(() => {
     //建立 Modal 實例
     new Modal(productModalRef.current, {
-      backdrop: false,
+      backdrop: true,
+    });
+
+    new Modal(delProductModalRef.current, {
+      backdrop: true,
     });
   }, []);
 
@@ -122,7 +106,7 @@ function App() {
   const handleOpenProductModal = (status, product) => {
     setModalStatus(status);
     //判斷是新增還是編輯
-    if (status === 'add') {
+    if (status === "add") {
       setRowProduct(defaultModalState);
     } else {
       setRowProduct(product);
@@ -133,20 +117,33 @@ function App() {
     modalInstance.show();
   };
 
-  //關閉Modal
+  //關閉新增Modal
   const handleCloseProductModal = () => {
     //取得實例
     const modalInstance = Modal.getInstance(productModalRef.current);
     modalInstance.hide();
   };
 
-  const handleModalInputChange = (e) => { 
+  const handleOpenDelProductModal = (product) => {
+    setRowProduct(product);
+    //取得實例
+    const modalInstance = Modal.getInstance(delProductModalRef.current);
+    modalInstance.show();
+  };
+
+  const handleCloseDelProductModal = () => {
+    //取得實例
+    const modalInstance = Modal.getInstance(delProductModalRef.current);
+    modalInstance.hide();
+  };
+
+  const handleModalInputChange = (e) => {
     const { value, name, checked, type } = e.target;
     setRowProduct({
       ...rowProduct,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === "checkbox" ? checked : value,
     });
-  }
+  };
 
   //編輯副圖欄位
   const handleImageChange = (e, index) => {
@@ -154,21 +151,20 @@ function App() {
     const subImages = [...rowProduct.imagesUrl];
     subImages[index] = value;
 
-
-     setRowProduct({
-       ...rowProduct,
-       imagesUrl: subImages
-     });
-  }
+    setRowProduct({
+      ...rowProduct,
+      imagesUrl: subImages,
+    });
+  };
 
   //新增附圖
   const addImage = () => {
-    const newImage = [...rowProduct.imagesUrl, ''];
+    const newImage = [...rowProduct.imagesUrl, ""];
     setRowProduct({
       ...rowProduct,
-      imagesUrl: newImage
+      imagesUrl: newImage,
     });
-  }
+  };
 
   //刪除附圖
   const delImage = () => {
@@ -179,6 +175,84 @@ function App() {
       imagesUrl: subImages,
     });
   };
+
+  //新增產品
+  const createProduct = async () => {
+    try {
+      await axios.post(`${BASE_URL}/v2/api/${API_PATH}/admin/product`, {
+        data: {
+          ...rowProduct,
+          origin_price: Number(rowProduct.origin_price),
+          price: Number(rowProduct.price),
+          is_enabled: rowProduct.is_enabled ? 1 : 0,
+        },
+      });
+    } catch (error) {
+      alert("新增產品失敗");
+    }
+  };
+
+  //編輯產品
+  const editProduct = async () => {
+    try {
+      await axios.put(
+        `${BASE_URL}/v2/api/${API_PATH}/admin/product/${rowProduct.id}`,
+        {
+          data: {
+            ...rowProduct,
+            origin_price: Number(rowProduct.origin_price),
+            price: Number(rowProduct.price),
+            is_enabled: rowProduct.is_enabled ? 1 : 0,
+          },
+        }
+      );
+    } catch (error) {
+      alert("編輯產品失敗");
+    }
+  };
+
+  //刪除產品
+  const delProduct = async () => {
+    try {
+      await axios.delete(
+        `${BASE_URL}/v2/api/${API_PATH}/admin/product/${rowProduct.id}`,
+        {
+          data: {
+            ...rowProduct,
+            origin_price: Number(rowProduct.origin_price),
+            price: Number(rowProduct.price),
+            is_enabled: rowProduct.is_enabled ? 1 : 0,
+          },
+        }
+      );
+    } catch (error) {
+      alert("刪除產品失敗");
+    }
+  };
+
+  //確定btn
+  const updateProduct = async () => {
+    const apiCall = modalStatus === "add" ? createProduct : editProduct;
+    try {
+      await apiCall();
+      getProducts();
+      handleCloseProductModal();
+    } catch (error) {
+      alert("更新產品失敗");
+    }
+  };
+
+
+  const handleDeleteProduct = async () => {
+    try {
+      await delProduct();
+      getProducts();
+      handleCloseDelProductModal();
+    } catch (error) {
+      alert("刪除產品失敗");
+    }
+    
+  }
 
   return (
     <>
@@ -227,6 +301,7 @@ function App() {
                             編輯
                           </button>
                           <button
+                            onClick={() => handleOpenDelProductModal(row)}
                             type="button"
                             className="btn btn-outline-danger btn-sm"
                           >
@@ -275,7 +350,7 @@ function App() {
         </div>
       )}
 
-      {/********  modal ********/}
+      {/********  新增編輯modal ********/}
       <div
         ref={productModalRef}
         id="productModal"
@@ -355,13 +430,19 @@ function App() {
                         rowProduct.imagesUrl[
                           rowProduct.imagesUrl.length - 1
                         ] !== "" && (
-                        <button onClick={addImage} className="btn btn-outline-primary btn-sm w-100">
+                          <button
+                            onClick={addImage}
+                            className="btn btn-outline-primary btn-sm w-100"
+                          >
                             新增圖片
                           </button>
                         )}
 
                       {rowProduct.imagesUrl.length > 1 && (
-                        <button onClick={delImage} className="btn btn-outline-danger btn-sm w-100">
+                        <button
+                          onClick={delImage}
+                          className="btn btn-outline-danger btn-sm w-100"
+                        >
                           取消圖片
                         </button>
                       )}
@@ -501,8 +582,56 @@ function App() {
               >
                 取消
               </button>
-              <button type="button" className="btn btn-primary">
+              <button
+                onClick={updateProduct}
+                type="button"
+                className="btn btn-primary"
+              >
                 確認
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/********  刪除modal ********/}
+      <div
+        ref={delProductModalRef}
+        className="modal fade"
+        id="delProductModal"
+        tabIndex="-1"
+        style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+      >
+        <div className="modal-dialog">
+          <div className="modal-content">
+            <div className="modal-header">
+              <h1 className="modal-title fs-5">刪除產品</h1>
+              <button
+                onClick={handleCloseDelProductModal}
+                type="button"
+                className="btn-close"
+                data-bs-dismiss="modal"
+                aria-label="Close"
+              ></button>
+            </div>
+            <div className="modal-body">
+              你是否要刪除
+              <span className="text-danger fw-bold">{rowProduct.title}</span>
+            </div>
+            <div className="modal-footer">
+              <button
+                onClick={handleCloseDelProductModal}
+                type="button"
+                className="btn btn-secondary"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleDeleteProduct}
+                type="button"
+                className="btn btn-danger"
+              >
+                確定刪除
               </button>
             </div>
           </div>
