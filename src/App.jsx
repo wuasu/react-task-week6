@@ -6,8 +6,8 @@ import { Modal } from "bootstrap";
 
 function App() {
   const [account, setAccount] = useState({
-    username: "example@test.com",
-    password: "example",
+    username: "@gmail.com",
+    password: "",
   });
 
   const [isAuth, setIsAuth] = useState(false);
@@ -17,6 +17,7 @@ function App() {
   const API_PATH = import.meta.env.VITE_API_PATH;
 
   const [modalStatus, setModalStatus] = useState(null);
+  const [page, setPage] = useState(1);
 
   //欄位預設值
   const defaultModalState = {
@@ -60,16 +61,48 @@ function App() {
       });
   };
 
-  const getProducts = useCallback(async () => {
+  const getProducts = useCallback(
+    async (page = 1) => {
+      try {
+        const res = await axios.get(
+          `${BASE_URL}/v2/api/${API_PATH}/admin/products?page=${page}`
+        );
+        setProducts(res.data.products);
+        setPageInfo(res.data.pagination);
+      } catch (error) {
+        alert("取得產品失敗");
+      }
+    },
+    [BASE_URL, API_PATH]
+  );
+
+  // 分頁
+  const [pageInfo, setPageInfo] = useState({});
+  const handlePageChange = async (page) => {
+    setPage(page);
+    await getProducts(page);
+  };
+
+  // 上傳圖片
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    const formData = new FormData();
+    formData.append("file-to-upload", file);
     try {
-      const res = await axios.get(
-        `${BASE_URL}/v2/api/${API_PATH}/admin/products`
+      const res = await axios.post(
+        `${BASE_URL}/v2/api/${API_PATH}/admin/upload`,
+        formData
       );
-      setProducts(res.data.products);
+      const uploadedimageUrl = res.data.imageUrl;
+      setRowProduct({
+        ...rowProduct,
+        imageUrl: uploadedimageUrl,
+      });
+
     } catch (error) {
-      alert("取得產品失敗");
+      alert("上傳圖片失敗");
     }
-  }, [BASE_URL, API_PATH]);
+  };
 
   const checkUserLogin = useCallback(async () => {
     try {
@@ -308,6 +341,51 @@ function App() {
               </table>
             </div>
           </div>
+          {/* 分頁 */}
+          <div className="d-flex justify-content-center">
+            <nav>
+              <ul className="pagination">
+                <li className={`page-item ${!pageInfo.has_pre && "disabled"}`}>
+                  <a
+                    onClick={() => handlePageChange(pageInfo.current_page - 1)}
+                    className="page-link"
+                    href="#"
+                  >
+                    上一頁
+                  </a>
+                </li>
+
+                {Array.from({ length: pageInfo.total_pages }).map(
+                  (_, index) => (
+                    <li
+                      className={`page-item ${
+                        pageInfo.current_page === index + 1 && "active"
+                      }`}
+                      key={index}
+                    >
+                      <a
+                        onClick={() => handlePageChange(index + 1)}
+                        className="page-link"
+                        href="#"
+                      >
+                        {index + 1}
+                      </a>
+                    </li>
+                  )
+                )}
+
+                <li className={`page-item ${!pageInfo.has_next && "disabled"}`}>
+                  <a
+                    onClick={() => handlePageChange(pageInfo.current_page + 1)}
+                    className="page-link"
+                    href="#"
+                  >
+                    下一頁
+                  </a>
+                </li>
+              </ul>
+            </nav>
+          </div>
         </div>
       ) : (
         <div className="d-flex flex-column justify-content-center align-items-center vh-100">
@@ -368,6 +446,20 @@ function App() {
               <div className="row g-4">
                 <div className="col-md-4">
                   <div className="mb-4">
+                    <div className="mb-5">
+                      <label htmlFor="fileInput" className="form-label">
+                        {" "}
+                        圖片上傳{" "}
+                      </label>
+                      <input
+                        type="file"
+                        accept=".jpg,.jpeg,.png"
+                        className="form-control"
+                        id="fileInput"
+                        onChange={handleFileChange}
+                      />
+                    </div>
+
                     <label htmlFor="primary-image" className="form-label">
                       主圖
                     </label>
@@ -502,6 +594,10 @@ function App() {
                         type="number"
                         className="form-control"
                         placeholder="請輸入原價"
+                        min="0"
+                        onInput={(e) => {
+                          if (e.target.value < 0) e.target.value = 0; // 避免輸入負數
+                        }}
                       />
                     </div>
                     <div className="col-6">
@@ -516,6 +612,10 @@ function App() {
                         type="number"
                         className="form-control"
                         placeholder="請輸入售價"
+                        min="0"
+                        onInput={(e) => {
+                          if (e.target.value < 0) e.target.value = 0; // 避免輸入負數
+                        }}
                       />
                     </div>
                   </div>
