@@ -34,26 +34,26 @@ function LoginPage(props) {
       });
   };
     
-    //   const checkUserLogin = useCallback(async () => {
-    //     try {
-    //       await axios.post(`${BASE_URL}/v2/api/user/check`);
-    //       props.getProducts();
-    //       props.setIsAuth(true);
-    //     } catch (error) {
-    //       console.error(error);
-    //     }
-    //   // eslint-disable-next-line react-hooks/exhaustive-deps
-    //   }, [BASE_URL, props.getProducts]);
+      const checkUserLogin = useCallback(async () => {
+        try {
+          await axios.post(`${BASE_URL}/v2/api/user/check`);
+          //props.getProducts();
+          props.setIsAuth(true);
+        } catch (error) {
+          console.error(error);
+        }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, [BASE_URL]);
 
-    //   useEffect(() => {
-    //     const token = document.cookie.replace(
-    //       // eslint-disable-next-line no-useless-escape
-    //       /(?:(?:^|.*;\s*)hexToken\s*\=\s*([^;]*).*$)|^.*$/,
-    //       "$1"
-    //     );
-    //     axios.defaults.headers.common["Authorization"] = token;
-    //     checkUserLogin();
-    //   }, [checkUserLogin]);
+      useEffect(() => {
+        const token = document.cookie.replace(
+          // eslint-disable-next-line no-useless-escape
+          /(?:(?:^|.*;\s*)hexToken\s*\=\s*([^;]*).*$)|^.*$/,
+          "$1"
+        );
+        axios.defaults.headers.common["Authorization"] = token;
+        checkUserLogin();
+      }, [checkUserLogin]);
 
 
   return (
@@ -92,7 +92,6 @@ function LoginPage(props) {
 }
 
 LoginPage.propTypes = {
- // getProducts: PropTypes.func.isRequired,
   setIsAuth: PropTypes.func,
 };
 
