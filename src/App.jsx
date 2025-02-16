@@ -217,7 +217,7 @@ function App() {
           </tbody>
         </table>
 
-        <div
+        {/* <div
           ref={productModalRef}
           style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
           className="modal fade"
@@ -288,7 +288,7 @@ function App() {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
 
         {cart.carts?.length > 0 && (
           <div>
